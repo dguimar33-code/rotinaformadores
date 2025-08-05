@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotina dos Formadores</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .modal {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Color Palette: Energetic & Playful (#003f5c, #58508d, #bc5090, #ff6361, #ffa600) -->
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-[#003f5c] mb-2">Rotina dos Formadores</h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">Acompanhamento e visualização das atividades de agosto a dezembro de 2025.</p>
+        </header>
+
+        <main class="space-y-8">
+            <!-- Controles e Filtros -->
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between">
+                <div class="flex flex-wrap gap-2 mb-4 md:mb-0">
+                    <button data-filter="Todos" class="filter-btn px-4 py-2 bg-[#58508d] text-white font-bold rounded-lg shadow-md hover:bg-[#4a427a] transition-colors">Todos</button>
+                    <button data-filter="Planejar" class="filter-btn px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg shadow-md hover:bg-gray-300 transition-colors">Planejar</button>
+                    <button data-filter="Executar" class="filter-btn px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg shadow-md hover:bg-gray-300 transition-colors">Executar</button>
+                    <button data-filter="Feito" class="filter-btn px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg shadow-md hover:bg-gray-300 transition-colors">Feito</button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="export-csv" class="px-6 py-2 bg-[#bc5090] text-white font-bold rounded-lg shadow-md hover:bg-[#a3467e] transition-colors">Exportar CSV</button>
+                    <button id="open-modal" class="px-6 py-2 bg-[#003f5c] text-white font-bold rounded-lg shadow-md hover:bg-[#003147] transition-colors">+ Adicionar Atividade</button>
+                </div>
+            </div>
+
+            <!-- Calendário e Tabela de Atividades -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Calendário -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <button id="prev-month" class="text-gray-500 hover:text-gray-800 transition-colors">&lt;</button>
+                        <h2 id="calendar-title" class="text-2xl font-bold text-[#003f5c]"></h2>
+                        <button id="next-month" class="text-gray-500 hover:text-gray-800 transition-colors">&gt;</button>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center font-bold text-sm">
+                        <div class="text-gray-500">Dom</div>
+                        <div class="text-gray-500">Seg</div>
+                        <div class="text-gray-500">Ter</div>
+                        <div class="text-gray-500">Qua</div>
+                        <div class="text-gray-500">Qui</div>
+                        <div class="text-gray-500">Sex</div>
+                        <div class="text-gray-500">Sáb</div>
+                    </div>
+                    <div id="calendar-days" class="grid grid-cols-7 gap-1 text-center text-sm mt-2"></div>
+                </div>
+
+                <!-- Tabela de Tarefas -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Atividades Registradas</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Formador(a)</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Início</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fim</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="task-table-body" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Status -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-[#003f5c] mb-4">Gráfico de Status das Atividades</h2>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="text-center mt-12 py-6 border-t">
+            <p class="text-gray-500">Desenvolvido como uma ferramenta de acompanhamento interativa.</p>
+        </footer>
+
+    </div>
+
+    <!-- Modal para adicionar nova atividade -->
+    <div id="add-task-modal" class="modal fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-bold text-[#003f5c]" id="modal-title">Adicionar Nova Atividade</h3>
+                    <div class="mt-2">
+                        <form id="add-task-form" class="space-y-4">
+                            <div>
+                                <label for="articuladora" class="block text-sm font-medium text-gray-700">Nome do Formador(a)</label>
+                                <input type="text" id="articuladora" name="articuladora" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#58508d] focus:ring focus:ring-[#58508d] focus:ring-opacity-50">
+                            </div>
+                            <div>
+                                <label for="atividade" class="block text-sm font-medium text-gray-700">Atividade</label>
+                                <input type="text" id="atividade" name="atividade" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#58508d] focus:ring focus:ring-[#58508d] focus:ring-opacity-50">
+                            </div>
+                            <div>
+                                <label for="dataInicio" class="block text-sm font-medium text-gray-700">Data de Início</label>
+                                <input type="date" id="dataInicio" name="dataInicio" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#58508d] focus:ring focus:ring-[#58508d] focus:ring-opacity-50">
+                            </div>
+                            <div>
+                                <label for="dataFim" class="block text-sm font-medium text-gray-700">Data de Fim</label>
+                                <input type="date" id="dataFim" name="dataFim" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#58508d] focus:ring focus:ring-[#58508d] focus:ring-opacity-50">
+                            </div>
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                                <select id="status" name="status" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#58508d] focus:ring focus:ring-[#58508d] focus:ring-opacity-50">
+                                    <option value="Planejar">Planejar</option>
+                                    <option value="Executar">Executar</option>
+                                    <option value="Feito">Feito</option>
+                                </select>
+                            </div>
+                            <div class="px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#58508d] text-base font-medium text-white hover:bg-[#4a427a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#58508d] sm:ml-3 sm:w-auto sm:text-sm">Adicionar</button>
+                                <button type="button" id="close-modal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskTableBody = document.getElementById('task-table-body');
+            const calendarTitle = document.getElementById('calendar-title');
+            const calendarDays = document.getElementById('calendar-days');
+            const prevMonthBtn = document.getElementById('prev-month');
+            const nextMonthBtn = document.getElementById('next-month');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const modal = document.getElementById('add-task-modal');
+            const openModalBtn = document.getElementById('open-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            const addTaskForm = document.getElementById('add-task-form');
+            const statusChartCanvas = document.getElementById('statusChart');
+            const exportCsvBtn = document.getElementById('export-csv');
+            let statusChart;
+
+            let tasks = [
+                { id: 1, articuladora: 'DENIS', atividade: 'Letramento anos inicias', dataInicio: '2025-08-01', dataFim: '2025-10-08', status: 'Executar' },
+                { id: 2, articuladora: 'Marcus', atividade: 'matematica financeira', dataInicio: '2025-08-04', dataFim: '2025-08-04', status: 'Feito' },
+                { id: 3, articuladora: 'Marcus', atividade: 'Lançar novas sequências didáticas', dataInicio: '2025-08-10', dataFim: '2025-08-15', status: 'Planejar' },
+                { id: 4, articuladora: 'DENIS', atividade: 'Reunião mensal com coordenação', dataInicio: '2025-09-02', dataFim: '2025-09-02', status: 'Executar' },
+                { id: 5, articuladora: 'Marcus', atividade: 'Análise de resultados do 1º ano', dataInicio: '2025-09-20', dataFim: '2025-09-25', status: 'Feito' },
+                { id: 6, articuladora: 'DENIS', atividade: 'Formação em sistema Bernoulli', dataInicio: '2025-11-10', dataFim: '2025-11-12', status: 'Planejar' }
+            ];
+
+            let currentFilter = 'Todos';
+            let currentDate = new Date(2025, 7, 1); // Start in August 2025
+
+            const statusColors = {
+                'Planejar': { bg: 'bg-[#ffa600]', text: 'text-white' },
+                'Executar': { bg: 'bg-[#ff6361]', text: 'text-white' },
+                'Feito':    { bg: 'bg-[#003f5c]', text: 'text-white' }
+            };
+
+            const chartColors = {
+                'Planejar': '#ffa600',
+                'Executar': '#ff6361',
+                'Feito':    '#003f5c'
+            };
+            
+            const defaultChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 12 } }
+                    }
+                }
+            };
+
+            function renderTable() {
+                taskTableBody.innerHTML = '';
+                const filteredTasks = tasks.filter(task => currentFilter === 'Todos' || task.status === currentFilter);
+                filteredTasks.forEach(task => {
+                    const row = taskTableBody.insertRow();
+                    const color = statusColors[task.status] || { bg: 'bg-gray-400', text: 'text-white' };
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${task.articuladora}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${task.atividade}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${new Date(task.dataInicio + 'T00:00:00').toLocaleDateString()}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${new Date(task.dataFim + 'T00:00:00').toLocaleDateString()}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${color.bg} ${color.text}">
+                                ${task.status}
+                            </span>
+                        </td>
+                    `;
+                });
+            }
+
+            function renderChart() {
+                if (statusChart) statusChart.destroy();
+                
+                const statusCounts = tasks.reduce((acc, task) => {
+                    acc[task.status] = (acc[task.status] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const labels = ['Planejar', 'Executar', 'Feito'];
+                const data = {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Número de Atividades',
+                        data: labels.map(label => statusCounts[label] || 0),
+                        backgroundColor: labels.map(label => chartColors[label])
+                    }]
+                };
+
+                statusChart = new Chart(statusChartCanvas, {
+                    type: 'bar',
+                    data: data,
+                    options: defaultChartOptions
+                });
+            }
+
+            function renderCalendar() {
+                calendarDays.innerHTML = '';
+                const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                calendarTitle.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+                const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+                const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    calendarDays.appendChild(document.createElement('div'));
+                }
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayCell = document.createElement('div');
+                    dayCell.textContent = day;
+                    dayCell.className = 'p-2 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer';
+                    
+                    const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                    const dayTasks = tasks.filter(task => {
+                        const taskStart = new Date(task.dataInicio + 'T00:00:00');
+                        const taskEnd = new Date(task.dataFim + 'T00:00:00');
+                        return currentDay >= taskStart && currentDay <= taskEnd;
+                    });
+
+                    if (dayTasks.length > 0) {
+                        let colorClass = '';
+                        if (dayTasks.some(t => t.status === 'Executar')) {
+                            colorClass = statusColors['Executar'].bg;
+                        } else if (dayTasks.some(t => t.status === 'Planejar')) {
+                            colorClass = statusColors['Planejar'].bg;
+                        } else {
+                            colorClass = statusColors['Feito'].bg;
+                        }
+                        dayCell.className += ` text-white ${colorClass} font-bold`;
+                    }
+                    calendarDays.appendChild(dayCell);
+                }
+            }
+
+            function exportTasksToCSV() {
+                const headers = ['Formador(a)', 'Atividade', 'Data de Início', 'Data de Fim', 'Status'];
+                const csvRows = [headers.join(',')];
+
+                tasks.forEach(task => {
+                    const row = [
+                        `"${task.articuladora}"`,
+                        `"${task.atividade}"`,
+                        `"${task.dataInicio}"`,
+                        `"${task.dataFim}"`,
+                        `"${task.status}"`
+                    ];
+                    csvRows.push(row.join(','));
+                });
+
+                const csvString = csvRows.join('\n');
+                const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'rotina_formadores.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            function updateUI() {
+                renderTable();
+                renderChart();
+                renderCalendar();
+            }
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('bg-[#58508d]', 'text-white');
+                        btn.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    button.classList.add('bg-[#58508d]', 'text-white');
+                    button.classList.remove('bg-gray-200', 'text-gray-700');
+                    currentFilter = button.dataset.filter;
+                    updateUI();
+                });
+            });
+
+            prevMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            nextMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            openModalBtn.addEventListener('click', () => { modal.style.display = 'block'; });
+            closeModalBtn.addEventListener('click', () => { modal.style.display = 'none'; addTaskForm.reset(); });
+
+            addTaskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(addTaskForm);
+                const newTask = {
+                    id: tasks.length + 1,
+                    articuladora: formData.get('articuladora'),
+                    atividade: formData.get('atividade'),
+                    dataInicio: formData.get('dataInicio'),
+                    dataFim: formData.get('dataFim'),
+                    status: formData.get('status')
+                };
+                tasks.push(newTask);
+                modal.style.display = 'none';
+                addTaskForm.reset();
+                updateUI();
+            });
+
+            exportCsvBtn.addEventListener('click', exportTasksToCSV);
+
+            updateUI();
+        });
+    </script>
+</body>
+</html>
